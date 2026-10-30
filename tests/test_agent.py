@@ -101,3 +101,10 @@ def test_chart_aggregates(db_path):
     ov = idx.overview()
     assert ov["days_per_month"] == [{"month": "2025-10", "days": 1}]
     assert ov["top_speakers"][0] == {"speaker": "Adv Hassim SC", "segments": 2}
+
+
+def test_truncated_answer_is_trimmed_to_last_sentence():
+    from app.agent import trim_truncated
+    assert trim_truncated("He said it was unlawful [E1]. She disagreed and said the [E") == \
+        "He said it was unlawful [E1]. …"
+    assert trim_truncated('Quote: "very concerning." [E3] Then the minis') == 'Quote: "very concerning." [E3] …'

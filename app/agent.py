@@ -18,6 +18,7 @@ MODEL = os.environ.get("NEBIUS_MODEL", "nvidia/Llama-3_3-Nemotron-Super-49B-v1_5
 MAX_ROUNDS = int(os.environ.get("AGENT_MAX_ROUNDS", "3"))
 PER_QUERY = int(os.environ.get("AGENT_PER_QUERY", "6"))
 MAX_EVIDENCE = int(os.environ.get("AGENT_MAX_EVIDENCE", "24"))
+ANSWER_TOKENS = int(os.environ.get("AGENT_ANSWER_TOKENS", "3000"))
 
 PLANNER_SYSTEM = """/no_think
 You are a research planner for investigators studying the Madlanga Commission of Inquiry
@@ -65,6 +66,14 @@ def strip_think(text: str) -> str:
     return re.sub(r"[【［]\s*(E\d+)\s*[】］]", r"[\1]", text)
 
 
+def trim_truncated(text: str) -> str:
+    """Cut an answer that hit the token limit back to its last complete sentence."""
+    text = re.sub(r"\[E?\d*$", "", text.rstrip())  # dangling partial citation marker
+    # a sentence ends at . ! ? (optionally followed by citations or a closing quote)
+    ends = [m.end() for m in re.finditer(r"[.!?][\"”’)]*(?:\s*\[E\d+\])*", text)]
+    return (text[:ends[-1]] if ends else text).rstrip() + " …"
+
+
 def parse_json(text: str) -> dict:
     text = strip_think(text)
     m = re.search(r"\{.*\}", text, flags=re.S)
@@ -90,6 +99,7 @@ class Agent:
             messages=[{"role": "system", "content": system},
                       {"role": "user", "content": user}],
         )
+        self.last_finish_reason = getattr(resp.choices[0], "finish_reason", None)
         return resp.choices[0].message.content or ""
 
     @staticmethod
@@ -161,13 +171,15 @@ class Agent:
                     "seconds": round(time.time() - t0, 1)}
 
         prompt = f"Question: {question}\n\nEvidence:\n{self._format_evidence(evidence)}"
-        answer = strip_think(self._chat(ANSWER_SYSTEM, prompt, max_tokens=1500))
+        answer = strip_think(self._chat(ANSWER_SYSTEM, prompt, max_tokens=ANSWER_TOKENS))
         if not re.search(r"\[E\d+\]", answer):  # the model occasionally drops citations; ask once more
             answer = strip_think(self._chat(
                 ANSWER_SYSTEM,
                 f"{prompt}\n\nYour previous answer had no [E#] citations. Rewrite it, citing every claim "
                 f"with evidence ids like [E1].\n\nPrevious answer:\n{answer}",
-                max_tokens=1500))
+                max_tokens=ANSWER_TOKENS))
+        if self.last_finish_reason == "length":
+            answer = trim_truncated(answer)
 
         cited = sorted({int(n) for n in re.findall(r"\[E(\d+)\]", answer)
                         if 1 <= int(n) <= len(evidence)})
