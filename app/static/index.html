@@ -4,100 +4,197 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ask the Commission</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f6f5f1; --card: #fff; --border: #e3e1da; --ink: #1d1d1b; --muted: #6b6a64;
-    --accent: #76b900; --accent-ink: #1d1d1b; --pale: #eef6dc; --err: #b3261e; --code: #f0efe9;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #151514; --card: #1e1e1c; --border: #33322e; --ink: #ecebe6; --muted: #9c9b94;
-      --pale: #26301a; --err: #ff8a80; --code: #2a2a27;
-    }
+    --bg: #05080b; --panel: #0a1016; --panel2: #0c131a; --line: #16222c; --line2: #223442;
+    --text: #e6f1f3; --muted: #8a9aa6; --dim: #4f606c;
+    --teal: #00e0b8; --teal-rgb: 0,224,184; --pink: #ff3d8b; --amber: #ffb020; --blue: #5fb0ff;
+    --deep: #021512; --err: #ff6b6b; --cut: 10px;
+    --sans: "Inter Tight", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink);
-         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 920px; margin: 0 auto; padding: 28px 16px 48px; }
-  h1 { margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .badge { font-size: .75rem; font-weight: 600; background: var(--accent); color: var(--accent-ink);
-           padding: 3px 10px; border-radius: 999px; }
-  .tagline { margin: 6px 0 2px; font-size: 1.1rem; }
-  .muted { color: var(--muted); font-size: .9rem; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15.5px/1.6 var(--sans);
+         background-image:
+           radial-gradient(900px 500px at 85% -10%, rgba(var(--teal-rgb), .10), transparent 60%),
+           radial-gradient(700px 400px at -10% 30%, rgba(255,61,139,.05), transparent 60%),
+           linear-gradient(rgba(var(--teal-rgb), .035) 1px, transparent 1px),
+           linear-gradient(90deg, rgba(var(--teal-rgb), .035) 1px, transparent 1px);
+         background-size: auto, auto, 40px 40px, 40px 40px; background-attachment: fixed; min-height: 100vh; }
+  main { max-width: 1240px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 56px; }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
   .err { color: var(--err); }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-          padding: 18px 20px; margin-top: 16px; }
-  .card h2 { margin: 0 0 10px; font-size: 1.05rem; }
-  .modes { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 12px; }
-  .mode { border: 1px solid var(--border); background: var(--card); color: var(--ink);
-          padding: 6px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: .9rem; }
-  .mode.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-  form { display: flex; gap: 8px; }
-  #q { flex: 1; min-width: 0; font: inherit; font-size: 1.05rem; padding: 12px 14px;
-       border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--ink); }
-  #q:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  #go { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink);
-        border: 0; border-radius: 10px; padding: 0 22px; cursor: pointer; }
-  #go:disabled { opacity: .55; cursor: wait; }
-  .news-opt { display: none; margin-top: 10px; font-size: .9rem; color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .chip { font: inherit; font-size: .85rem; background: var(--pale); color: var(--ink);
-          border: 1px solid transparent; border-radius: 999px; padding: 5px 12px; cursor: pointer; text-align: left; }
-  .chip:hover { border-color: var(--accent); }
-  .answer { white-space: pre-wrap; }
-  a.cite { display: inline-block; font-size: .72rem; font-weight: 700; background: var(--accent);
-           color: var(--accent-ink); text-decoration: none; padding: 0 6px; border-radius: 999px;
-           vertical-align: 1px; margin: 0 1px; }
-  .quote { border-left: 3px solid var(--accent); padding: 8px 12px; margin: 10px 0;
-           border-radius: 0 8px 8px 0; transition: background .3s; scroll-margin-top: 16px; }
-  .quote:target { background: var(--pale); }
-  .quote .meta { font-size: .82rem; color: var(--muted); margin-bottom: 4px; }
-  .quote .meta b { color: var(--ink); }
-  .quote .text { white-space: pre-wrap; font-size: .95rem; }
-  .ext { margin: 10px 0; }
-  .ext a { color: var(--ink); font-weight: 600; }
-  .ext p { margin: 2px 0 0; font-size: .9rem; }
-  ol.trace { margin: 0; padding-left: 22px; font-size: .9rem; }
-  ol.trace li { margin: 6px 0; }
-  code { background: var(--code); padding: 1px 6px; border-radius: 6px; font-size: .85rem; }
-  footer { margin-top: 32px; font-size: .8rem; color: var(--muted); }
-  @media (max-width: 560px) { form { flex-direction: column; } #go { padding: 12px; } h1 { font-size: 1.6rem; } }
+
+  /* header */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+         font: 500 .75rem/1 var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+  .live { display: inline-flex; align-items: center; gap: 8px; }
+  .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal);
+            animation: pulse 1.8s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  .badge { color: var(--teal); border: 1px solid rgba(var(--teal-rgb), .4); padding: 5px 10px;
+           clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+  h1 { font-family: var(--display); font-weight: 900; font-stretch: 112%; text-transform: uppercase;
+       font-size: clamp(2.2rem, 6vw, 4.2rem); line-height: .95; letter-spacing: -.01em; margin: 26px 0 10px; }
+  h1 span { color: var(--teal); text-shadow: 0 0 28px rgba(var(--teal-rgb), .45); }
+  .tagline { margin: 0; font-size: 1.15rem; color: var(--text); max-width: 640px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+           background: var(--line); border: 1px solid var(--line); margin: 22px 0 26px; }
+  .stat { background: var(--panel); padding: 12px 16px; }
+  .stat b { display: block; font: 700 1.5rem/1.1 var(--display); color: var(--teal); }
+  .stat small { font: .7rem var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+  /* console */
+  .console { background: var(--panel); border: 1px solid var(--line2); padding: 18px;
+             clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+  .modes { display: flex; gap: 0; flex-wrap: wrap; border-bottom: 1px solid var(--line2); margin: -4px 0 16px; }
+  .mode { font: 500 .78rem var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+          background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; cursor: pointer; margin-bottom: -1px; }
+  .mode:hover { color: var(--text); }
+  .mode.active { color: var(--teal); border-bottom-color: var(--teal); }
+  .mode .k { color: var(--dim); margin-right: 6px; }
+  form { display: flex; gap: 10px; }
+  .field { flex: 1; min-width: 0; display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line2); }
+  .field:focus-within { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(var(--teal-rgb), .12); }
+  .field::before { content: ">"; font: 500 1rem var(--mono); color: var(--teal); padding: 0 4px 0 14px; }
+  #q { flex: 1; min-width: 0; font: 1.05rem var(--sans); padding: 14px 14px 14px 6px; border: 0; background: none; color: var(--text); outline: none; }
+  #q::placeholder { color: var(--dim); }
+  #go { font: 700 .85rem var(--mono); letter-spacing: .1em; text-transform: uppercase; background: var(--teal); color: var(--deep);
+        border: 0; padding: 0 26px; cursor: pointer;
+        clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+  #go:hover { box-shadow: 0 0 24px rgba(var(--teal-rgb), .5); filter: brightness(1.08); }
+  #go:disabled { opacity: .5; cursor: wait; }
+  .news-opt { display: none; margin-top: 12px; font-size: .85rem; color: var(--muted); }
+  .news-opt input { accent-color: var(--teal); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip { font: .82rem var(--sans); color: var(--muted); background: rgba(var(--teal-rgb), .04); border: 1px solid var(--line2);
+          padding: 6px 12px; cursor: pointer; text-align: left; }
+  .chip:hover { color: var(--text); border-color: var(--teal); }
+
+  /* panels */
+  .panel { background: rgba(10,16,22,.92); border: 1px solid var(--line); margin-top: 16px; position: relative; }
+  .panel > h2 { margin: 0; padding: 12px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+                font: 500 .72rem var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .panel > h2 b { color: var(--teal); font-weight: 500; }
+  .panel > .body { padding: 16px 18px; }
+  .panel::before { content: ""; position: absolute; top: -1px; left: -1px; width: 14px; height: 14px;
+                   border-top: 2px solid var(--teal); border-left: 2px solid var(--teal); }
+
+  .grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 16px; align-items: start; margin-top: 10px; }
+  .grid > div > .panel:first-child { margin-top: 16px; }
+  .sticky { position: sticky; top: 12px; }
+  .viz { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+  .viz .panel { margin-top: 16px; }
+  @media (max-width: 900px) { .grid, .viz { grid-template-columns: 1fr; } .sticky { position: static; } }
+
+  .answer b { color: #fff; font-weight: 600; }
+  .answer b.h { display: inline-block; color: var(--teal); font: 600 .78rem var(--mono); text-transform: uppercase; letter-spacing: .08em; }
+  .answer .li { color: var(--teal); margin-right: 8px; }
+  .answer { white-space: pre-wrap; font-size: 1.02rem; line-height: 1.7; }
+  a.cite { display: inline-block; font: 600 .7rem/1.5 var(--mono); color: var(--deep); background: var(--teal); text-decoration: none;
+           padding: 0 5px; margin: 0 2px; vertical-align: 2px; box-shadow: 0 0 10px rgba(var(--teal-rgb), .35); }
+  a.cite:hover, a.cite.hot { background: var(--pink); color: #fff; box-shadow: 0 0 12px rgba(255,61,139,.55); }
+
+  #evid .body { max-height: 78vh; overflow: auto; padding-top: 6px; }
+  .quote { border: 1px solid var(--line); border-left: 3px solid var(--teal); background: var(--panel2); padding: 10px 12px; margin: 10px 0;
+           scroll-margin-top: 16px; transition: border-color .2s, background .3s, box-shadow .3s; }
+  .quote.hot, .quote:target { border-color: var(--pink); background: rgba(255,61,139,.07); box-shadow: 0 0 0 1px var(--pink), 0 0 22px rgba(255,61,139,.18); }
+  .quote .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font: .72rem var(--mono); color: var(--muted); margin-bottom: 6px; }
+  .quote .id { color: var(--deep); background: var(--teal); padding: 0 6px; font-weight: 600; }
+  .quote .who { color: var(--text); font: 600 .85rem var(--sans); }
+  .quote .text { white-space: pre-wrap; font-size: .92rem; color: #cfdde1; }
+
+  .ext { margin: 0 0 14px; padding-left: 12px; border-left: 2px solid var(--amber); }
+  .ext a { color: var(--text); font-weight: 600; text-decoration: none; }
+  .ext a:hover { color: var(--amber); }
+  .ext p { margin: 3px 0 0; font-size: .88rem; color: var(--muted); }
+  .panel.extp::before { border-color: var(--amber); }
+  .panel.extp > h2 b { color: var(--amber); }
+
+  /* charts */
+  svg text { font-family: var(--mono); }
+  .tl-dot { cursor: pointer; transition: r .15s; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font: .7rem var(--mono); color: var(--muted); margin-top: 4px; }
+  .sw { display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; }
+  .sw.bar { background: rgba(95,176,255,.6); width: 4px; } .sw.dot { background: var(--teal); border-radius: 50%; box-shadow: 0 0 6px var(--teal); }
+  .bars .row { display: grid; grid-template-columns: minmax(0, 1.3fr) 1fr 38px; gap: 10px; align-items: center; margin: 7px 0; font-size: .82rem; cursor: pointer; }
+  .bars .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bars .track { height: 10px; background: var(--line); position: relative; }
+  .bars .fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, rgba(var(--teal-rgb), .35), var(--teal)); box-shadow: 0 0 10px rgba(var(--teal-rgb), .4); }
+  .bars .n { font: .78rem var(--mono); color: var(--teal); text-align: right; }
+  .bars .row:hover .name { color: var(--teal); }
+  .bars .row.hot .fill { background: var(--pink); box-shadow: 0 0 10px rgba(255,61,139,.5); }
+
+  .pipe { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 4px; }
+  .step { flex: 1 0 200px; border: 1px solid var(--line2); background: var(--panel2); padding: 10px 12px; position: relative; margin-right: 22px; }
+  .step:not(:last-child)::after { content: ""; position: absolute; right: -22px; top: 50%; width: 22px; height: 1px; background: var(--teal); box-shadow: 0 0 6px var(--teal); }
+  .step:not(:last-child)::before { content: ""; position: absolute; right: -24px; top: calc(50% - 3px); border: 3.5px solid transparent; border-left: 5px solid var(--teal); }
+  .step h3 { margin: 0 0 6px; font: 600 .7rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--teal); }
+  .step.done { border-color: var(--teal); background: rgba(var(--teal-rgb), .06); }
+  .step p { margin: 0 0 8px; font-size: .82rem; color: var(--muted); }
+  .q { display: grid; grid-template-columns: 1fr auto; gap: 8px; font: .74rem var(--mono); margin: 4px 0; align-items: center; }
+  .q code { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .q .new { color: var(--deep); background: var(--teal); padding: 0 5px; }
+  .q .new.zero { background: var(--line2); color: var(--muted); }
+
+  /* loading */
+  .scan { padding: 22px 18px; font: .85rem var(--mono); color: var(--teal); }
+  .scan .bar { height: 2px; background: var(--line); margin-top: 14px; overflow: hidden; }
+  .scan .bar i { display: block; height: 100%; width: 30%; background: var(--teal); box-shadow: 0 0 12px var(--teal); animation: sweep 1.2s ease-in-out infinite; }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+  .scan .log div { color: var(--muted); } .scan .log div::before { content: "› "; color: var(--teal); }
+  .blink::after { content: "_"; animation: pulse 1s steps(1) infinite; }
+
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .78rem; color: var(--dim); }
+  footer b { color: var(--muted); font-weight: 500; }
+  @media (max-width: 560px) { form { flex-direction: column; } #go { padding: 14px; } .mode { padding: 9px 10px; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>Ask the Commission <span class="badge" id="model" hidden></span></h1>
-  <p class="tagline">Turn months of hearings into evidence you can cite in minutes.</p>
-  <p class="muted" id="stats">Loading index…</p>
-
-  <div class="modes" id="modes">
-    <button class="mode active" data-mode="ask" type="button">Ask a question</button>
-    <button class="mode" data-mode="brief" type="button">Witness prep brief</button>
-    <button class="mode" data-mode="contradict" type="button">Explain contradictions</button>
-    <button class="mode" data-mode="verify" type="button">Verify a claim</button>
+  <div class="top">
+    <span class="live"><i></i> Madlanga Commission · public record</span>
+    <span class="badge" id="model" hidden></span>
   </div>
+  <h1>Ask the <span>Commission</span></h1>
+  <p class="tagline">Turn months of hearings into evidence you can cite in minutes.</p>
+  <div class="stats" id="stats"><div class="stat"><b>…</b><small>Loading index</small></div></div>
 
-  <form id="form">
-    <input id="q" autocomplete="off" required minlength="3" maxlength="1000">
-    <button id="go" type="submit">Ask</button>
-  </form>
-  <label class="news-opt" id="newsOpt"><input type="checkbox" id="news">
-    Also show recent press coverage and public court judgments (Tavily web search, shown separately from the record)</label>
-  <div class="chips" id="chips"></div>
+  <section class="console">
+    <div class="modes" id="modes">
+      <button class="mode active" data-mode="ask" type="button"><span class="k">01</span>Ask a question</button>
+      <button class="mode" data-mode="brief" type="button"><span class="k">02</span>Witness prep brief</button>
+      <button class="mode" data-mode="contradict" type="button"><span class="k">03</span>Explain contradictions</button>
+      <button class="mode" data-mode="verify" type="button"><span class="k">04</span>Verify a claim</button>
+    </div>
+    <form id="form">
+      <div class="field"><input id="q" autocomplete="off" required minlength="3" maxlength="1000"></div>
+      <button id="go" type="submit">Run</button>
+    </form>
+    <label class="news-opt" id="newsOpt"><input type="checkbox" id="news">
+      Also show recent press coverage and public court judgments (Tavily web search, shown separately from the record)</label>
+    <div class="chips" id="chips"></div>
+  </section>
 
   <div id="out"></div>
 
-  <footer>Testimony is allegation, not proven fact. Source: public hearing records of the Judicial Commission of
+  <footer><b>Testimony is allegation, not proven fact.</b> Source: public hearing records of the Judicial Commission of
     Inquiry into Criminality, Political Interference and Corruption in the Criminal Justice System.
     Powered by NVIDIA Nemotron on Nebius Token Factory.</footer>
 </main>
 <script>
 const PLACEHOLDERS = {
-  ask: "e.g. What did witnesses say about the disbanding of the Political Killings Task Team?",
+  ask: "What did witnesses say about the disbanding of the Political Killings Task Team?",
   brief: "Witness name, e.g. Lieutenant General Nhlanhla Mkhwanazi",
   contradict: "Topic or person, e.g. the removal of the task team dockets",
   verify: "Paste a claim, e.g. The task team was disbanded without consultation",
 };
+const BUTTONS = { ask: "Ask", brief: "Brief", contradict: "Compare", verify: "Verify" };
 const EXAMPLES = [
   "Who testified about the Political Killings Task Team and what did they say?",
   "What evidence was given about Senzo Mchunu?",
@@ -108,11 +205,13 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 let mode = "ask";
+let health = {};
 
 function setMode(m) {
   mode = m;
   document.querySelectorAll(".mode").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
   $("q").placeholder = PLACEHOLDERS[m];
+  $("go").textContent = BUTTONS[m];
 }
 $("modes").addEventListener("click", (e) => { const b = e.target.closest(".mode"); if (b) setMode(b.dataset.mode); });
 setMode("ask");
@@ -124,69 +223,240 @@ EXAMPLES.forEach((t) => {
   $("chips").appendChild(b);
 });
 
+const stat = (v, label) => `<div class="stat"><b>${esc(v)}</b><small>${esc(label)}</small></div>`;
 fetch("/api/health").then((r) => r.json()).then((h) => {
+  health = h;
   if (h.model) { $("model").textContent = h.model.split("/").pop(); $("model").hidden = false; }
-  if (!h.ok) { $("stats").innerHTML = `<span class="err">${esc(h.error)}</span>`; return; }
-  $("stats").textContent = `Searching ${h.hearing_days} hearing days (${h.first_date} to ${h.last_date}), ` +
-    `${h.segments.toLocaleString()} transcript segments and ${h.statements} statements. Every answer cites the transcript.`;
+  if (!h.ok) { $("stats").innerHTML = `<div class="stat err">${esc(h.error)}</div>`; return; }
+  $("stats").innerHTML = stat(h.hearing_days, "Hearing days") + stat(h.segments.toLocaleString(), "Transcript segments") +
+    stat(h.speakers, "Speakers") + stat(h.statements, "Statements") + stat(`${h.first_date.slice(2, 7)} → ${h.last_date.slice(2, 7)}`, "Record span");
   if (h.news) $("newsOpt").style.display = "block";
-}).catch((e) => { $("stats").innerHTML = `<span class="err">${esc(e)}</span>`; });
+  overview();
+}).catch((e) => { $("stats").innerHTML = `<div class="stat err">${esc(e)}</div>`; });
 
-function where(c) {
-  const parts = [];
-  if (c.day) {
-    let w = `Day ${c.day}`;
-    if (c.page) w += `, p.${c.page}`;
-    if (c.line) w += `, line ${c.line}`;
-    parts.push(w);
-  } else if (c.source) parts.push(c.source);
-  return parts;
+// Landing view: hearing days per month and the most frequent speakers in the record
+async function overview() {
+  try {
+    const o = await (await fetch("/api/overview")).json();
+    if ($("out").innerHTML.trim()) return;
+    const months = o.days_per_month || [], maxD = Math.max(1, ...months.map((m) => m.days));
+    const W = 760, H = 150, bw = (W - 20) / Math.max(1, months.length);
+    const bars = months.map((m, i) => {
+      const h = m.days / maxD * 100, xx = 10 + i * bw;
+      const lab = new Date(m.month + "-01T00:00:00Z").toLocaleString("en", { month: "short", timeZone: "UTC" });
+      return `<rect x="${xx + 4}" y="${118 - h}" width="${bw - 8}" height="${h}" fill="url(#gT)"><title>${m.month}: ${m.days} hearing days</title></rect>` +
+        `<text x="${xx + bw / 2}" y="${112 - h}" fill="#00e0b8" font-size="10" text-anchor="middle">${m.days}</text>` +
+        `<text x="${xx + bw / 2}" y="136" fill="#8a9aa6" font-size="10" text-anchor="middle">${lab}${m.month.endsWith("-01") || i === 0 ? " " + m.month.slice(2, 4) : ""}</text>`;
+    }).join("");
+    const chart = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Hearing days per month">
+      <defs><linearGradient id="gT" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#00e0b8"/><stop offset="1" stop-color="#00e0b8" stop-opacity=".15"/></linearGradient></defs>
+      <line x1="10" y1="118" x2="${W - 10}" y2="118" stroke="#223442"/>${bars}</svg>`;
+    const top = (o.top_speakers || []).slice(0, 8), maxS = Math.max(1, ...top.map((t) => t.segments));
+    const spk = `<div class="bars">` + top.map((t, i) =>
+      `<div class="row" style="cursor:default"><span class="name">${esc(t.speaker)}</span><span class="track"><span class="fill" style="width:${t.segments / maxS * 100}%;background:${PALETTE[i]};box-shadow:0 0 10px ${PALETTE[i]}80"></span></span>` +
+      `<span class="n" style="color:${PALETTE[i]};width:auto">${(t.segments / 1000).toFixed(1)}k</span></div>`).join("") + `</div>`;
+    if ($("out").innerHTML.trim()) return;
+    $("out").innerHTML = `<div class="viz">` + panel("The record at a glance", "hearing days per month", chart) +
+      panel("Most heard voices", "transcript segments", spk) + `</div>`;
+  } catch { /* landing charts are optional */ }
 }
 
-function extCard(title, items) {
-  return `<div class="card"><h2>${esc(title)}</h2>` + items.map((n) =>
+function where(c) {
+  if (c.day) {
+    let w = `Day ${c.day}`;
+    if (c.page) w += ` · p.${c.page}`;
+    if (c.line) w += ` · l.${c.line}`;
+    return w;
+  }
+  return c.source || "";
+}
+
+function panel(title, right, body, cls = "", id = "") {
+  return `<section class="panel ${cls}"${id ? ` id="${id}"` : ""}><h2><span>${title}</span><b>${right}</b></h2><div class="body">${body}</div></section>`;
+}
+
+function extPanel(title, items) {
+  return panel(esc(title), `${items.length} external`, items.map((n) =>
     `<div class="ext"><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title || n.url)}</a>` +
-    (n.published ? ` <span class="muted">· ${esc(n.published)}</span>` : "") +
-    `<p>${esc(n.snippet)}</p></div>`).join("") + `</div>`;
+    (n.published ? ` <span class="muted mono" style="font-size:.72rem">· ${esc(n.published)}</span>` : "") +
+    `<p>${esc(n.snippet)}</p></div>`).join(""), "extp");
+}
+
+// One colour per speaker, shared by the timeline, the bar chart and the quote cards
+const PALETTE = ["#00e0b8", "#ff3d8b", "#ffb020", "#5fb0ff", "#b48cff", "#7ee787", "#ff7a45", "#e6f1f3"];
+let speakerColour = new Map();
+const who = (c) => c.speaker || c.source || "Unattributed";
+function assignColours(cites) {
+  const counts = new Map();
+  cites.forEach((c) => counts.set(who(c), (counts.get(who(c)) || 0) + 1));
+  speakerColour = new Map([...counts.entries()].sort((a, b) => b[1] - a[1])
+    .map(([s], i) => [s, PALETTE[i] || "#4f606c"]));
+}
+const colour = (c) => speakerColour.get(who(c)) || "#00e0b8";
+
+let tlScale = null;
+const STOP = new Set("a an and are as at be by did do does each for from give given has have how in is it its of on or other said say says should tell testified testify that the their them they this to was were what when where which who whom why with witness witnesses evidence about contradict contradictions claim verify brief between any all".split(" "));
+const terms = (q) => q.replace(/[^\p{L}\p{N}\s'-]/gu, " ").split(/\s+/).filter((w) => w.length > 2 && !STOP.has(w.toLowerCase())).join(" ");
+
+// Mentions of the question's key terms on every hearing day, drawn behind the cited dots
+async function drawHits(question) {
+  const q = terms(question);
+  if (!q || !tlScale) return;
+  try {
+    const days = await (await fetch(`/api/timeline?q=${encodeURIComponent(q)}`)).json();
+    const g = document.getElementById("tlHits");
+    if (!g || !Array.isArray(days) || !days.length) return;
+    const max = Math.max(1, ...days.map((d) => d.hits));
+    const { x, base } = tlScale;
+    g.innerHTML = days.filter((d) => d.hits).map((d) => {
+      const h = Math.max(2, d.hits / max * 90), px = x(Date.parse(d.date));
+      return `<rect x="${px - 1.5}" y="${base - h}" width="3" height="${h}" fill="rgba(95,176,255,.45)"><title>Day ${d.day} · ${d.date} · ${d.hits} mentions</title></rect>`;
+    }).join("");
+    const lab = document.querySelector("#tlPanel h2 b");
+    if (lab) lab.textContent = `"${q}" · ${days.reduce((a, d) => a + d.hits, 0).toLocaleString()} mentions`;
+  } catch { /* the chart still works without the background layer */ }
+}
+
+// Evidence timeline: each citation placed on the hearing record's date range
+function timeline(cites) {
+  const dated = cites.map((c) => ({ c, t: Date.parse(c.date) })).filter((d) => !isNaN(d.t));
+  if (!dated.length) return `<p class="muted">No dated passages in this answer.</p>`;
+  let t0 = Date.parse(health.first_date), t1 = Date.parse(health.last_date);
+  if (isNaN(t0) || isNaN(t1)) { t0 = Math.min(...dated.map((d) => d.t)); t1 = Math.max(...dated.map((d) => d.t)); }
+  if (t1 <= t0) t1 = t0 + 864e5;
+  const W = 760, H = 170, L = 16, R = 16, base = 130;
+  const x = (t) => L + (Math.min(Math.max(t, t0), t1) - t0) / (t1 - t0) * (W - L - R);
+  tlScale = { x, base, W, L, R };
+  const stack = {};
+  let dots = "";
+  dated.sort((a, b) => a.t - b.t).forEach(({ c, t }) => {
+    const px = Math.round(x(t) / 8) * 8;
+    const k = stack[px] = (stack[px] || 0) + 1;
+    const cy = base - 10 - (k - 1) * 11;
+    const col = colour(c);
+    dots += `<line x1="${px}" y1="${base}" x2="${px}" y2="${cy}" stroke="rgba(0,224,184,.2)"/>` +
+      `<circle class="tl-dot" data-id="${esc(c.id)}" cx="${px}" cy="${cy}" r="4.5" fill="${col}" style="filter:drop-shadow(0 0 4px ${col})">` +
+      `<title>${esc(c.id)} · ${esc(c.speaker || "")} · ${esc(c.date)} · ${esc(where(c))}</title></circle>`;
+  });
+  // month ticks
+  let ticks = "";
+  const d = new Date(t0); d.setUTCDate(1);
+  for (let i = 0; i < 40; i++) {
+    const tt = d.getTime();
+    if (tt > t1) break;
+    if (tt >= t0) {
+      const px = x(tt);
+      ticks += `<line x1="${px}" y1="${base}" x2="${px}" y2="${base + 6}" stroke="#4f606c"/>` +
+        `<text x="${px}" y="${base + 20}" fill="#8a9aa6" font-size="10" text-anchor="middle">${d.toLocaleString("en", { month: "short", timeZone: "UTC" })}${d.getUTCMonth() === 0 ? " " + d.getUTCFullYear() : ""}</text>`;
+    }
+    d.setUTCMonth(d.getUTCMonth() + 1);
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Timeline of cited passages by hearing date">
+    <line x1="${L}" y1="${base}" x2="${W - R}" y2="${base}" stroke="#223442" stroke-width="2"/><g id="tlHits"></g>${ticks}${dots}</svg>
+    <div class="legend"><span><i class="sw bar"></i>mentions per hearing day</span><span><i class="sw dot"></i>passages cited in this answer</span></div>`;
+}
+
+// Who's cited: passage count per speaker
+function speakers(cites) {
+  const m = new Map();
+  cites.forEach((c) => { const s = who(c); if (!m.has(s)) m.set(s, []); m.get(s).push(c.id); });
+  const rows = [...m.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 10);
+  if (!rows.length) return `<p class="muted">No citations.</p>`;
+  const max = rows[0][1].length;
+  return `<div class="bars">` + rows.map(([s, ids]) =>
+    `<div class="row" data-ids="${esc(ids.join(","))}" title="${esc(ids.join(", "))}"><span class="name">${esc(s)}</span>` +
+    `<span class="track"><span class="fill" style="width:${(ids.length / max) * 100}%;background:${speakerColour.get(s)};box-shadow:0 0 10px ${speakerColour.get(s)}80"></span></span><span class="n" style="color:${speakerColour.get(s)}">${ids.length}</span></div>`).join("") + `</div>`;
+}
+
+function trace(r) {
+  const steps = (r.trace || []).map((s) => {
+    if (s.action === "answer")
+      return `<div class="step done"><h3>Round ${esc(s.round)} · Answer</h3><p>${esc(s.reason)}</p></div>`;
+    const qs = (s.searches || []).map((q) =>
+      `<div class="q"><code title="${esc(q.query)}${q.speaker ? " · speaker: " + esc(q.speaker) : ""}">${esc(q.query)}${q.speaker ? ` @${esc(q.speaker)}` : ""}</code>` +
+      `<span class="new ${q.new ? "" : "zero"}">+${esc(q.new)}</span></div>`).join("");
+    return `<div class="step"><h3>Round ${esc(s.round)} · Search</h3><p>${esc(s.reason)}</p>${qs}</div>`;
+  }).join("");
+  return `<div class="pipe">${steps || `<p class="muted">No trace.</p>`}</div>`;
+}
+
+function highlight(ids, on) {
+  ids.forEach((id) => {
+    document.getElementById(id)?.classList.toggle("hot", on);
+    document.querySelectorAll(`a.cite[data-id="${CSS.escape(id)}"]`).forEach((a) => a.classList.toggle("hot", on));
+  });
+}
+function jump(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  highlight([id], true); setTimeout(() => highlight([id], false), 1600);
 }
 
 function render(r) {
-  let html = `<div class="card"><h2>Answer</h2><div class="answer">` +
-    esc(r.answer).replace(/\[E(\d+)\]/g, '<a class="cite" href="#E$1">E$1</a>') + `</div></div>`;
-
   const cites = r.citations || [];
-  html += `<div class="card"><h2>Cited evidence (${cites.length})</h2>` + cites.map((c) => {
-    const meta = [`${esc(c.id)}`];
-    if (c.speaker) meta.push(`<b>${esc(c.speaker)}</b>`);
-    where(c).forEach((w) => meta.push(esc(w)));
-    if (c.date) meta.push(esc(c.date));
-    return `<div class="quote" id="${esc(c.id)}"><div class="meta">${meta.join(" · ")}</div>` +
-      `<div class="text">${esc(c.text)}</div></div>`;
-  }).join("") + `</div>`;
+  assignColours(cites);
+  const answer = esc(r.answer)
+    .replace(/^#{1,4}\s*(.+)$/gm, '<b class="h">$1</b>')
+    .replace(/\*\*(.+?)\*\*/g, "<b>$1</b>")
+    .replace(/^\s*[-*]\s+/gm, '<span class="li">▸</span>')
+    .replace(/\[(E\d+(?:\s*[-–,;]\s*E?\d+)*)\]/g, (_, list) => {
+      // Expand [E3], [E3, E5] and [E9-E13] into one marker per passage
+      const ids = [];
+      list.split(/\s*[,;]\s*/).forEach((part) => {
+        const [lo, hi] = part.split(/\s*[-–]\s*/).map((x) => parseInt(x.replace(/\D/g, ""), 10));
+        for (let n = lo; n <= (hi && hi - lo < 30 ? hi : lo); n++) ids.push(`E${n}`);
+      });
+      return ids.map((id) => `<a class="cite" data-id="${id}" href="#${id}">${id}</a>`).join("");
+    });
+  const quotes = cites.map((c) =>
+    `<div class="quote" id="${esc(c.id)}" style="border-left-color:${colour(c)}"><div class="meta"><span class="id">${esc(c.id)}</span>` +
+    (c.speaker ? `<span class="who">${esc(c.speaker)}</span>` : "") +
+    `<span>${esc(where(c))}</span>${c.date ? `<span>${esc(c.date)}</span>` : ""}</div>` +
+    `<div class="text">${esc(c.text)}</div></div>`).join("");
 
-  if (r.news) html += extCard("External press coverage (not commission evidence)", r.news);
+  let left = panel("Answer", `${cites.length} citations · ${esc(r.seconds)}s`, `<div class="answer">${answer}</div>`);
+  if (r.news && r.news.length) left += extPanel("External press coverage · not commission evidence", r.news);
   if (r.judgments && r.judgments.length)
-    html += extCard("Possibly related court judgments (SAFLII; verify identity, names can match different people)", r.judgments);
-  if (r.news_error) html += `<div class="card err">${esc(r.news_error)}</div>`;
+    left += extPanel("Possibly related court judgments (SAFLII) · verify identity", r.judgments);
+  if (r.news_error) left += panel("External search", "error", `<span class="err">${esc(r.news_error)}</span>`);
 
-  const steps = (r.trace || []).map((s) => {
-    if (s.action === "answer")
-      return `<li>Round ${esc(s.round)}: enough evidence, answering. ${esc(s.reason)}</li>`;
-    const qs = (s.searches || []).map((q) =>
-      `<div><code>${esc(q.query)}</code>${q.speaker ? ` · speaker: ${esc(q.speaker)}` : ""} · ${esc(q.new)} new</div>`).join("");
-    return `<li>Round ${esc(s.round)}: ${esc(s.reason)}${qs}</li>`;
-  }).join("");
-  html += `<div class="card"><h2>Agent trace · ${esc(r.evidence_count ?? 0)} passages read · ${esc(r.seconds)}s · ${esc(r.model)}</h2>` +
-    `<ol class="trace">${steps}</ol></div>`;
-  $("out").innerHTML = html;
+  const right = `<div class="sticky">` + panel("Cited evidence · transcript", `${cites.length} passages`, quotes || `<p class="muted">None.</p>`, "", "evid") + `</div>`;
+
+  const viz = `<div class="viz">` +
+    panel("Evidence timeline", "cited passages by hearing date", timeline(cites), "", "tlPanel") +
+    panel("Who's cited", "passages per speaker", speakers(cites)) + `</div>`;
+  $("out").innerHTML = `<div class="grid"><div>${left}</div>${right}</div>` + viz +
+    panel("Agent trace", `${esc(r.evidence_count ?? 0)} passages read · ${esc(r.model)}`, trace(r));
 }
 
+// Hover and click wiring between answer markers, charts and quotes
+$("out").addEventListener("mouseover", (e) => {
+  const a = e.target.closest("a.cite, .tl-dot, .bars .row");
+  if (!a) return;
+  const ids = a.dataset.ids ? a.dataset.ids.split(",") : [a.dataset.id];
+  highlight(ids, true);
+  a.addEventListener("mouseleave", () => highlight(ids, false), { once: true });
+  if (a.matches("a.cite")) document.getElementById(a.dataset.id)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+$("out").addEventListener("click", (e) => {
+  const a = e.target.closest("a.cite, .tl-dot, .bars .row");
+  if (!a) return;
+  e.preventDefault();
+  jump(a.dataset.ids ? a.dataset.ids.split(",")[0] : a.dataset.id);
+});
+
+const LOADING = ["Planning search queries", "Querying 137k transcript segments", "Reading candidate passages", "Checking coverage, searching again if needed", "Drafting a cited answer"];
+let loadTimer;
 $("form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const question = $("q").value.trim();
   if (question.length < 3) return;
   $("go").disabled = true;
-  $("out").innerHTML = `<div class="card muted">Nemotron is planning searches and reading the transcripts…</div>`;
+  let i = 0;
+  $("out").innerHTML = `<section class="panel"><div class="scan"><span class="blink">Nemotron agent running</span><div class="log" id="log"></div><div class="bar"><i></i></div></div></section>`;
+  const tick = () => { if (i < LOADING.length && $("log")) $("log").insertAdjacentHTML("beforeend", `<div>${LOADING[i++]}</div>`); };
+  tick(); loadTimer = setInterval(tick, 2600);
   try {
     const res = await fetch("/api/ask", {
       method: "POST", headers: {"Content-Type": "application/json"},
@@ -195,9 +465,11 @@ $("form").addEventListener("submit", async (e) => {
     const data = await res.json();
     if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail));
     render(data);
+    drawHits(question);
   } catch (err) {
-    $("out").innerHTML = `<div class="card err">${esc(err.message || err)}</div>`;
+    $("out").innerHTML = panel("Error", "", `<span class="err">${esc(err.message || err)}</span>`);
   } finally {
+    clearInterval(loadTimer);
     $("go").disabled = false;
   }
 });
