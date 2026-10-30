@@ -90,3 +90,14 @@ def test_fts_query_is_fully_quoted():
 
 def test_full_width_brackets_are_normalised():
     assert strip_think("<think>x</think>Claim 【E2】 and ［E3］.") == "Claim [E2] and [E3]."
+
+
+def test_chart_aggregates(db_path):
+    idx = Index(db_path)
+    assert idx.timeline("task team letter") == [{"day": 12, "date": "2025-10-02", "hits": 1}]
+    assert idx.timeline("nothing matches this") == [{"day": 12, "date": "2025-10-02", "hits": 0}]
+    assert sorted((h["speaker"], h["hits"]) for h in idx.speaker_hits("disband")) == \
+        [("Adv Hassim SC", 1), ("Lt Gen Sibiya", 1)]
+    ov = idx.overview()
+    assert ov["days_per_month"] == [{"month": "2025-10", "days": 1}]
+    assert ov["top_speakers"][0] == {"speaker": "Adv Hassim SC", "segments": 2}

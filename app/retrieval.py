@@ -52,12 +52,12 @@ def connect(path: str = DB_PATH) -> sqlite3.Connection:
     return conn
 
 
-def to_fts_query(text: str) -> str:
+def to_fts_query(text: str, op: str = "OR") -> str:
     """Turn free text into a safe FTS5 query.
 
-    Quoted phrases are kept as phrases; other words become an OR of terms so a
-    natural-language question still matches. Everything is quoted, so FTS5
-    syntax characters in user input cannot break the query.
+    Quoted phrases are kept as phrases; other words are joined with `op`: OR so a
+    natural-language question still matches, AND for precise counts in charts.
+    Everything is quoted, so FTS5 syntax characters in user input cannot break the query.
     """
     phrases = re.findall(r'"([^"]+)"', text)
     rest = re.sub(r'"[^"]+"', " ", text)
@@ -65,7 +65,7 @@ def to_fts_query(text: str) -> str:
              if w not in STOPWORDS and len(w) > 1]
     parts = [f'"{p.replace(chr(34), "")}"' for p in phrases]
     parts += [f'"{w}"' for w in dict.fromkeys(words)]
-    return " OR ".join(parts)
+    return f" {op} ".join(parts)
 
 
 def _snippet(text: str, query: str, width: int = 700) -> str:
@@ -156,6 +156,43 @@ class Index:
             "SELECT canonical_name FROM speakers WHERE canonical_name LIKE ? LIMIT ?",
             (f"%{like}%", limit)).fetchall()
         return [r[0] for r in rows]
+
+    # --- aggregates for charts: plain SQL, no model calls -------------------------
+
+    def timeline(self, query: str) -> list[dict]:
+        """Matching transcript passages per hearing day, including days with none."""
+        fts = to_fts_query(query, op="AND")
+        if not fts:
+            return []
+        rows = self.conn.execute(
+            "WITH hits AS (SELECT ts.hearing_id, COUNT(*) AS n FROM search_index si "
+            "JOIN transcript_segments ts ON ts.id = si.source_id "
+            "WHERE search_index MATCH ? AND si.source = 'transcript' GROUP BY ts.hearing_id) "
+            "SELECT h.day_number, h.hearing_date, COALESCE(hits.n, 0) AS hits FROM hearings h "
+            "LEFT JOIN hits ON hits.hearing_id = h.id ORDER BY h.hearing_date, h.day_number",
+            (fts,)).fetchall()
+        return [{"day": r[0], "date": r[1][:10], "hits": r[2]} for r in rows]
+
+    def speaker_hits(self, query: str, k: int = 15) -> list[dict]:
+        """Speakers ranked by how many matching passages they have."""
+        fts = to_fts_query(query, op="AND")
+        if not fts:
+            return []
+        rows = self.conn.execute(
+            "SELECT speaker, COUNT(*) AS hits FROM search_index WHERE search_index MATCH ? "
+            "AND speaker != '' GROUP BY speaker ORDER BY hits DESC LIMIT ?", (fts, k)).fetchall()
+        return [{"speaker": r[0], "hits": r[1]} for r in rows]
+
+    def overview(self, k: int = 10) -> dict:
+        months = self.conn.execute(
+            "SELECT substr(hearing_date, 1, 7) AS month, COUNT(*) FROM hearings "
+            "GROUP BY month ORDER BY month").fetchall()
+        speakers = self.conn.execute(
+            "SELECT s.canonical_name, COUNT(*) AS n FROM transcript_segments ts "
+            "JOIN speakers s ON s.id = ts.speaker_id GROUP BY s.id ORDER BY n DESC LIMIT ?",
+            (k,)).fetchall()
+        return {"days_per_month": [{"month": m, "days": d} for m, d in months],
+                "top_speakers": [{"speaker": s, "segments": n} for s, n in speakers]}
 
     def stats(self) -> dict:
         q = lambda s: self.conn.execute(s).fetchone()[0]

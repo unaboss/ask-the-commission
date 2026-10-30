@@ -55,6 +55,21 @@ def search(q: str, k: int = 10, speaker: str | None = None):
     return [p.to_dict() for p in get_agent().index.search(q, k=min(k, 50), speaker=speaker)]
 
 
+@app.get("/api/timeline")
+def timeline(q: str):
+    return get_agent().index.timeline(q)
+
+
+@app.get("/api/speakers")
+def speakers(q: str, k: int = 15):
+    return get_agent().index.speaker_hits(q, k=max(1, min(k, 50)))
+
+
+@app.get("/api/overview")
+def overview():
+    return get_agent().index.overview()
+
+
 @app.post("/api/ask")
 def ask(body: Ask):
     try:
