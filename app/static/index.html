@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the Commission</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --card: #fff; --border: #e3e1da; --ink: #1d1d1b; --muted: #6b6a64;
+    --accent: #76b900; --accent-ink: #1d1d1b; --pale: #eef6dc; --err: #b3261e; --code: #f0efe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151514; --card: #1e1e1c; --border: #33322e; --ink: #ecebe6; --muted: #9c9b94;
+      --pale: #26301a; --err: #ff8a80; --code: #2a2a27;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 28px 16px 48px; }
+  h1 { margin: 0; font-size: 2rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .badge { font-size: .75rem; font-weight: 600; background: var(--accent); color: var(--accent-ink);
+           padding: 3px 10px; border-radius: 999px; }
+  .tagline { margin: 6px 0 2px; font-size: 1.1rem; }
+  .muted { color: var(--muted); font-size: .9rem; }
+  .err { color: var(--err); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+          padding: 18px 20px; margin-top: 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 1.05rem; }
+  .modes { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 12px; }
+  .mode { border: 1px solid var(--border); background: var(--card); color: var(--ink);
+          padding: 6px 14px; border-radius: 999px; cursor: pointer; font: inherit; font-size: .9rem; }
+  .mode.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  form { display: flex; gap: 8px; }
+  #q { flex: 1; min-width: 0; font: inherit; font-size: 1.05rem; padding: 12px 14px;
+       border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--ink); }
+  #q:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #go { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-ink);
+        border: 0; border-radius: 10px; padding: 0 22px; cursor: pointer; }
+  #go:disabled { opacity: .55; cursor: wait; }
+  .news-opt { display: none; margin-top: 10px; font-size: .9rem; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip { font: inherit; font-size: .85rem; background: var(--pale); color: var(--ink);
+          border: 1px solid transparent; border-radius: 999px; padding: 5px 12px; cursor: pointer; text-align: left; }
+  .chip:hover { border-color: var(--accent); }
+  .answer { white-space: pre-wrap; }
+  a.cite { display: inline-block; font-size: .72rem; font-weight: 700; background: var(--accent);
+           color: var(--accent-ink); text-decoration: none; padding: 0 6px; border-radius: 999px;
+           vertical-align: 1px; margin: 0 1px; }
+  .quote { border-left: 3px solid var(--accent); padding: 8px 12px; margin: 10px 0;
+           border-radius: 0 8px 8px 0; transition: background .3s; scroll-margin-top: 16px; }
+  .quote:target { background: var(--pale); }
+  .quote .meta { font-size: .82rem; color: var(--muted); margin-bottom: 4px; }
+  .quote .meta b { color: var(--ink); }
+  .quote .text { white-space: pre-wrap; font-size: .95rem; }
+  .ext { margin: 10px 0; }
+  .ext a { color: var(--ink); font-weight: 600; }
+  .ext p { margin: 2px 0 0; font-size: .9rem; }
+  ol.trace { margin: 0; padding-left: 22px; font-size: .9rem; }
+  ol.trace li { margin: 6px 0; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 6px; font-size: .85rem; }
+  footer { margin-top: 32px; font-size: .8rem; color: var(--muted); }
+  @media (max-width: 560px) { form { flex-direction: column; } #go { padding: 12px; } h1 { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ask the Commission <span class="badge" id="model" hidden></span></h1>
+  <p class="tagline">Turn months of hearings into evidence you can cite in minutes.</p>
+  <p class="muted" id="stats">Loading index…</p>
+
+  <div class="modes" id="modes">
+    <button class="mode active" data-mode="ask" type="button">Ask a question</button>
+    <button class="mode" data-mode="brief" type="button">Witness prep brief</button>
+    <button class="mode" data-mode="contradict" type="button">Explain contradictions</button>
+    <button class="mode" data-mode="verify" type="button">Verify a claim</button>
+  </div>
+
+  <form id="form">
+    <input id="q" autocomplete="off" required minlength="3" maxlength="1000">
+    <button id="go" type="submit">Ask</button>
+  </form>
+  <label class="news-opt" id="newsOpt"><input type="checkbox" id="news">
+    Also show recent press coverage and public court judgments (Tavily web search, shown separately from the record)</label>
+  <div class="chips" id="chips"></div>
+
+  <div id="out"></div>
+
+  <footer>Testimony is allegation, not proven fact. Source: public hearing records of the Judicial Commission of
+    Inquiry into Criminality, Political Interference and Corruption in the Criminal Justice System.
+    Powered by NVIDIA Nemotron on Nebius Token Factory.</footer>
+</main>
+<script>
+const PLACEHOLDERS = {
+  ask: "e.g. What did witnesses say about the disbanding of the Political Killings Task Team?",
+  brief: "Witness name, e.g. Lieutenant General Nhlanhla Mkhwanazi",
+  contradict: "Topic or person, e.g. the removal of the task team dockets",
+  verify: "Paste a claim, e.g. The task team was disbanded without consultation",
+};
+const EXAMPLES = [
+  "Who testified about the Political Killings Task Team and what did they say?",
+  "What evidence was given about Senzo Mchunu?",
+  "What did witnesses say about the dockets that were removed?",
+  "Where do witnesses contradict each other about Cat Matlala?",
+];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+let mode = "ask";
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
+  $("q").placeholder = PLACEHOLDERS[m];
+}
+$("modes").addEventListener("click", (e) => { const b = e.target.closest(".mode"); if (b) setMode(b.dataset.mode); });
+setMode("ask");
+
+EXAMPLES.forEach((t) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.textContent = t;
+  b.onclick = () => { $("q").value = t; $("form").requestSubmit(); };
+  $("chips").appendChild(b);
+});
+
+fetch("/api/health").then((r) => r.json()).then((h) => {
+  if (h.model) { $("model").textContent = h.model.split("/").pop(); $("model").hidden = false; }
+  if (!h.ok) { $("stats").innerHTML = `<span class="err">${esc(h.error)}</span>`; return; }
+  $("stats").textContent = `Searching ${h.hearing_days} hearing days (${h.first_date} to ${h.last_date}), ` +
+    `${h.segments.toLocaleString()} transcript segments and ${h.statements} statements. Every answer cites the transcript.`;
+  if (h.news) $("newsOpt").style.display = "block";
+}).catch((e) => { $("stats").innerHTML = `<span class="err">${esc(e)}</span>`; });
+
+function where(c) {
+  const parts = [];
+  if (c.day) {
+    let w = `Day ${c.day}`;
+    if (c.page) w += `, p.${c.page}`;
+    if (c.line) w += `, line ${c.line}`;
+    parts.push(w);
+  } else if (c.source) parts.push(c.source);
+  return parts;
+}
+
+function extCard(title, items) {
+  return `<div class="card"><h2>${esc(title)}</h2>` + items.map((n) =>
+    `<div class="ext"><a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title || n.url)}</a>` +
+    (n.published ? ` <span class="muted">· ${esc(n.published)}</span>` : "") +
+    `<p>${esc(n.snippet)}</p></div>`).join("") + `</div>`;
+}
+
+function render(r) {
+  let html = `<div class="card"><h2>Answer</h2><div class="answer">` +
+    esc(r.answer).replace(/\[E(\d+)\]/g, '<a class="cite" href="#E$1">E$1</a>') + `</div></div>`;
+
+  const cites = r.citations || [];
+  html += `<div class="card"><h2>Cited evidence (${cites.length})</h2>` + cites.map((c) => {
+    const meta = [`${esc(c.id)}`];
+    if (c.speaker) meta.push(`<b>${esc(c.speaker)}</b>`);
+    where(c).forEach((w) => meta.push(esc(w)));
+    if (c.date) meta.push(esc(c.date));
+    return `<div class="quote" id="${esc(c.id)}"><div class="meta">${meta.join(" · ")}</div>` +
+      `<div class="text">${esc(c.text)}</div></div>`;
+  }).join("") + `</div>`;
+
+  if (r.news) html += extCard("External press coverage (not commission evidence)", r.news);
+  if (r.judgments && r.judgments.length)
+    html += extCard("Possibly related court judgments (SAFLII; verify identity, names can match different people)", r.judgments);
+  if (r.news_error) html += `<div class="card err">${esc(r.news_error)}</div>`;
+
+  const steps = (r.trace || []).map((s) => {
+    if (s.action === "answer")
+      return `<li>Round ${esc(s.round)}: enough evidence, answering. ${esc(s.reason)}</li>`;
+    const qs = (s.searches || []).map((q) =>
+      `<div><code>${esc(q.query)}</code>${q.speaker ? ` · speaker: ${esc(q.speaker)}` : ""} · ${esc(q.new)} new</div>`).join("");
+    return `<li>Round ${esc(s.round)}: ${esc(s.reason)}${qs}</li>`;
+  }).join("");
+  html += `<div class="card"><h2>Agent trace · ${esc(r.evidence_count ?? 0)} passages read · ${esc(r.seconds)}s · ${esc(r.model)}</h2>` +
+    `<ol class="trace">${steps}</ol></div>`;
+  $("out").innerHTML = html;
+}
+
+$("form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const question = $("q").value.trim();
+  if (question.length < 3) return;
+  $("go").disabled = true;
+  $("out").innerHTML = `<div class="card muted">Nemotron is planning searches and reading the transcripts…</div>`;
+  try {
+    const res = await fetch("/api/ask", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({question, mode, include_news: $("news").checked}),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail));
+    render(data);
+  } catch (err) {
+    $("out").innerHTML = `<div class="card err">${esc(err.message || err)}</div>`;
+  } finally {
+    $("go").disabled = false;
+  }
+});
+</script>
+</body>
+</html>
