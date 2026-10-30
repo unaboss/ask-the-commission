@@ -2,7 +2,7 @@
 
 **Turn months of hearings into evidence you can cite in minutes.**
 
-**Live demo: [ask.dataquant.dev](https://ask.dataquant.dev)**
+**Live demo: [ask.dataquant.dev](https://ask.dataquant.dev)** (backup while the domain is being set up: [soap-designated-cluster-enhancement.trycloudflare.com](https://soap-designated-cluster-enhancement.trycloudflare.com))
 
 Ask the Commission is an inquiry intelligence engine. Its first case study is South Africa's
 Madlanga Commission (the Judicial Commission of Inquiry into Criminality, Political Interference
