@@ -105,10 +105,8 @@ The tests run offline against a tiny fixture database and a stub chat client.
 
 ## What was built since August 26, 2026
 
-The Madlanga research pipeline and dashboard existed before (main last changed Aug 7, 2026). Since
-Aug 26 the pipeline gained page and line-on-page tracking per transcript segment, evidence bundle
-export, affirm/deny contradiction detection, shared notes, citation CSV export, and test suites
-with CI (Oct 29).
+The Madlanga research pipeline that scraped the hearings and built `commission_research.db` existed
+before the hackathon and is not part of this repository; the agent only reads its database.
 
 Everything in this repository is new work from today: the Nemotron agent loop, the FastAPI
 service, the web UI with agent trace, the Token Factory integration, the Tavily panels, Docker
