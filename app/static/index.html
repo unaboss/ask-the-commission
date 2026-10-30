@@ -150,6 +150,31 @@
   .scan .log div { color: var(--muted); } .scan .log div::before { content: "› "; color: var(--teal); }
   .blink::after { content: "_"; animation: pulse 1s steps(1) infinite; }
 
+
+  /* motion */
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes growX { from { transform: scaleX(0); } }
+  @keyframes growY { from { transform: scaleY(0); } }
+  @keyframes drop { from { opacity: 0; transform: translateY(-26px); } 70% { opacity: 1; transform: translateY(2px); } to { transform: none; } }
+  @keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.18); } 100% { transform: none; opacity: 1; } }
+  @keyframes glowIn { 0% { box-shadow: 0 0 0 rgba(0,224,184,0); } 50% { box-shadow: 0 0 26px rgba(0,224,184,.45); } 100% { box-shadow: 0 0 0 rgba(0,224,184,0); } }
+  @keyframes flicker { 0%, 100% { opacity: 1; } 8% { opacity: .2; } 10% { opacity: 1; } 14% { opacity: .4; } 16% { opacity: 1; } }
+  @keyframes scanline { from { transform: translateY(-100%); } to { transform: translateY(100vh); } }
+  .anim { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
+  h1 span { animation: flicker 2.4s 1 .3s both; }
+  .stats .stat { animation: rise .5s both; }
+  .stats .stat:nth-child(2) { animation-delay: .06s; } .stats .stat:nth-child(3) { animation-delay: .12s; }
+  .stats .stat:nth-child(4) { animation-delay: .18s; } .stats .stat:nth-child(5) { animation-delay: .24s; }
+  .bars .fill { transform-origin: left; animation: growX .9s cubic-bezier(.2,.8,.2,1) both; }
+  svg rect.gy { transform-box: fill-box; transform-origin: bottom; animation: growY .8s cubic-bezier(.2,.8,.2,1) both; }
+  .tl-dot { transform-box: fill-box; animation: drop .6s cubic-bezier(.2,.8,.2,1) both; }
+  a.cite { animation: pop .45s cubic-bezier(.2,.8,.2,1) both; }
+  .quote { animation: rise .45s both; }
+  .step { animation: rise .5s both; } .step.done { animation: rise .5s both, glowIn 1.6s 1 both; }
+  .answer { animation: rise .6s both; }
+  body::after { content: ""; position: fixed; left: 0; right: 0; top: 0; height: 120px; pointer-events: none; z-index: 5;
+                background: linear-gradient(transparent, rgba(0,224,184,.035), transparent); animation: scanline 7s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after, body::after { animation: none !important; } }
   footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); font-size: .78rem; color: var(--dim); }
   footer b { color: var(--muted); font-weight: 500; }
   @media (max-width: 560px) { form { flex-direction: column; } #go { padding: 14px; } .mode { padding: 9px 10px; } }
@@ -231,6 +256,7 @@ fetch("/api/health").then((r) => r.json()).then((h) => {
   $("stats").innerHTML = stat(h.hearing_days, "Hearing days") + stat(h.segments.toLocaleString(), "Transcript segments") +
     stat(h.speakers, "Speakers") + stat(h.statements, "Statements") + stat(`${h.first_date.slice(2, 7)} → ${h.last_date.slice(2, 7)}`, "Record span");
   if (h.news) $("newsOpt").style.display = "block";
+  document.querySelectorAll(".stat b").forEach(countUp);
   overview();
 }).catch((e) => { $("stats").innerHTML = `<div class="stat err">${esc(e)}</div>`; });
 
@@ -244,7 +270,7 @@ async function overview() {
     const bars = months.map((m, i) => {
       const h = m.days / maxD * 100, xx = 10 + i * bw;
       const lab = new Date(m.month + "-01T00:00:00Z").toLocaleString("en", { month: "short", timeZone: "UTC" });
-      return `<rect x="${xx + 4}" y="${118 - h}" width="${bw - 8}" height="${h}" fill="url(#gT)"><title>${m.month}: ${m.days} hearing days</title></rect>` +
+      return `<rect class="gy" style="animation-delay:${i * 60}ms" x="${xx + 4}" y="${118 - h}" width="${bw - 8}" height="${h}" fill="url(#gT)"><title>${m.month}: ${m.days} hearing days</title></rect>` +
         `<text x="${xx + bw / 2}" y="${112 - h}" fill="#00e0b8" font-size="10" text-anchor="middle">${m.days}</text>` +
         `<text x="${xx + bw / 2}" y="136" fill="#8a9aa6" font-size="10" text-anchor="middle">${lab}${m.month.endsWith("-01") || i === 0 ? " " + m.month.slice(2, 4) : ""}</text>`;
     }).join("");
@@ -258,7 +284,26 @@ async function overview() {
     if ($("out").innerHTML.trim()) return;
     $("out").innerHTML = `<div class="viz">` + panel("The record at a glance", "hearing days per month", chart) +
       panel("Most heard voices", "transcript segments", spk) + `</div>`;
+    animateIn();
   } catch { /* landing charts are optional */ }
+}
+
+// Stagger entrance animations for everything just rendered into #out
+function animateIn() {
+  document.querySelectorAll("#out .panel").forEach((p, i) => { p.classList.add("anim"); p.style.animationDelay = `${i * 110}ms`; });
+  document.querySelectorAll("#out .bars .fill").forEach((f, i) => f.style.animationDelay = `${300 + i * 70}ms`);
+  document.querySelectorAll("#out .tl-dot").forEach((d, i) => d.style.animationDelay = `${350 + i * 60}ms`);
+  document.querySelectorAll("#out a.cite").forEach((a, i) => a.style.animationDelay = `${250 + i * 35}ms`);
+  document.querySelectorAll("#out .quote").forEach((q, i) => q.style.animationDelay = `${200 + i * 60}ms`);
+  document.querySelectorAll("#out .step").forEach((s, i) => s.style.animationDelay = `${500 + i * 260}ms`);
+}
+function countUp(el) {
+  const target = parseInt(el.textContent.replace(/\D/g, ""), 10);
+  if (!target || /→/.test(el.textContent)) return;
+  const t0 = performance.now(), dur = 1100;
+  const step = (t) => { const k = Math.min(1, (t - t0) / dur), v = Math.round(target * (1 - Math.pow(1 - k, 3)));
+    el.textContent = v.toLocaleString(); if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
 }
 
 function where(c) {
@@ -310,7 +355,7 @@ async function drawHits(question) {
     const { x, base } = tlScale;
     g.innerHTML = days.filter((d) => d.hits).map((d) => {
       const h = Math.max(2, d.hits / max * 90), px = x(Date.parse(d.date));
-      return `<rect x="${px - 1.5}" y="${base - h}" width="3" height="${h}" fill="rgba(95,176,255,.45)"><title>Day ${d.day} · ${d.date} · ${d.hits} mentions</title></rect>`;
+      return `<rect class="gy" style="animation-delay:${Math.round(px)}ms" x="${px - 1.5}" y="${base - h}" width="3" height="${h}" fill="rgba(95,176,255,.45)"><title>Day ${d.day} · ${d.date} · ${d.hits} mentions</title></rect>`;
     }).join("");
     const lab = document.querySelector("#tlPanel h2 b");
     if (lab) lab.textContent = `"${q}" · ${days.reduce((a, d) => a + d.hits, 0).toLocaleString()} mentions`;
@@ -428,6 +473,7 @@ function render(r) {
     panel("Who's cited", "passages per speaker", speakers(cites)) + `</div>`;
   $("out").innerHTML = `<div class="grid"><div>${left}</div>${right}</div>` + viz +
     panel("Agent trace", `${esc(r.evidence_count ?? 0)} passages read · ${esc(r.model)}`, trace(r));
+  animateIn();
 }
 
 // Hover and click wiring between answer markers, charts and quotes
