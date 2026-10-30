@@ -104,7 +104,7 @@
   .quote { border: 1px solid var(--line); border-left: 3px solid var(--teal); background: var(--panel2); padding: 10px 12px; margin: 10px 0;
            scroll-margin-top: 16px; transition: border-color .2s, background .3s, box-shadow .3s; }
   .quote.hot, .quote:target { border-color: var(--pink); background: rgba(255,61,139,.07); box-shadow: 0 0 0 1px var(--pink), 0 0 22px rgba(255,61,139,.18); }
-  .quote .meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font: .72rem var(--mono); color: var(--muted); margin-bottom: 6px; }
+  .quote .meta { padding-right: 96px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font: .72rem var(--mono); color: var(--muted); margin-bottom: 6px; }
   .quote .id { color: var(--deep); background: var(--teal); padding: 0 6px; font-weight: 600; }
   .quote .who { color: var(--text); font: 600 .85rem var(--sans); }
   .quote .text { white-space: pre-wrap; font-size: .92rem; color: #cfdde1; }
@@ -151,6 +151,30 @@
   .blink::after { content: "_"; animation: pulse 1s steps(1) infinite; }
 
 
+
+  /* per-mode accent */
+  body[data-mode="brief"] { --teal: #ffb020; --teal-rgb: 255,176,32; }
+  body[data-mode="contradict"] { --teal: #ff3d8b; --teal-rgb: 255,61,139; }
+  body[data-mode="verify"] { --teal: #5fb0ff; --teal-rgb: 95,176,255; }
+  body { transition: background-color .4s; }
+  /* typewriter */
+  .answer .u { opacity: 0; transition: opacity .25s; }
+  .answer .u.on { opacity: 1; }
+  .answer a.cite.u { animation: none; }
+  .answer a.cite.u.on { animation: pop .45s cubic-bezier(.2,.8,.2,1) both; }
+  .caret { display: inline-block; width: .55em; height: 1.05em; background: var(--teal); vertical-align: -2px; margin-left: 2px; box-shadow: 0 0 10px var(--teal); animation: pulse .7s steps(1) infinite; }
+  /* quote term highlight and stamp */
+  .quote mark { background: rgba(var(--teal-rgb), .18); color: #fff; padding: 0 2px; box-shadow: inset 0 -1px 0 var(--teal); }
+  .quote { position: relative; }
+  .quote .stamp { position: absolute; top: 8px; right: 10px; font: 700 .62rem var(--mono); letter-spacing: .12em; color: var(--teal);
+                  border: 1px solid rgba(var(--teal-rgb), .5); padding: 2px 6px; transform: rotate(-4deg); opacity: .8; text-transform: uppercase; }
+  /* verdict stamp */
+  .verdict { display: inline-block; margin: 0 0 14px; font: 900 1.6rem/1 var(--display); font-stretch: 115%; letter-spacing: .04em; text-transform: uppercase;
+             padding: 8px 16px; border: 3px solid currentColor; transform: rotate(-3deg); animation: stampIn .5s cubic-bezier(.2,.8,.2,1) both; }
+  .verdict.ok { color: #7ee787; text-shadow: 0 0 18px rgba(126,231,135,.5); }
+  .verdict.bad { color: #ff3d8b; text-shadow: 0 0 18px rgba(255,61,139,.5); }
+  .verdict.mid { color: #ffb020; text-shadow: 0 0 18px rgba(255,176,32,.5); }
+  @keyframes stampIn { from { opacity: 0; transform: rotate(-3deg) scale(2.2); } to { opacity: 1; transform: rotate(-3deg) scale(1); } }
   /* motion */
   @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   @keyframes growX { from { transform: scaleX(0); } }
@@ -237,6 +261,7 @@ function setMode(m) {
   document.querySelectorAll(".mode").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
   $("q").placeholder = PLACEHOLDERS[m];
   $("go").textContent = BUTTONS[m];
+  document.body.dataset.mode = m;
 }
 $("modes").addEventListener("click", (e) => { const b = e.target.closest(".mode"); if (b) setMode(b.dataset.mode); });
 setMode("ask");
@@ -286,6 +311,39 @@ async function overview() {
       panel("Most heard voices", "transcript segments", spk) + `</div>`;
     animateIn();
   } catch { /* landing charts are optional */ }
+}
+
+// Reveal the answer word by word; each citation marker flashes its quote as it appears
+function typewrite() {
+  const root = $("answer");
+  if (!root || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const units = [];
+  const walk = (node) => {
+    [...node.childNodes].forEach((n) => {
+      if (n.nodeType === 3) {
+        const frag = document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach((w) => {
+          if (!w) return;
+          if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); return; }
+          const sp = document.createElement("span"); sp.className = "u"; sp.textContent = w; frag.appendChild(sp); units.push(sp);
+        });
+        n.replaceWith(frag);
+      } else if (n.matches?.("a.cite")) { n.classList.add("u"); n.style.animationDelay = "0ms"; units.push(n); }
+      else walk(n);
+    });
+  };
+  walk(root);
+  const caret = document.createElement("span"); caret.className = "caret";
+  const per = Math.max(1, Math.ceil(units.length / 180));
+  let i = 0;
+  const tick = () => {
+    for (let k = 0; k < per && i < units.length; k++, i++) {
+      const u = units[i]; u.classList.add("on"); u.after(caret);
+      if (u.matches("a.cite")) { const id = u.dataset.id; highlight([id], true); setTimeout(() => highlight([id], false), 700); }
+    }
+    if (i < units.length) setTimeout(tick, 22); else setTimeout(() => caret.remove(), 900);
+  };
+  setTimeout(tick, 250);
 }
 
 // Stagger entrance animations for everything just rendered into #out
@@ -438,7 +496,9 @@ function jump(id) {
   highlight([id], true); setTimeout(() => highlight([id], false), 1600);
 }
 
-function render(r) {
+function render(r, question = "") {
+  const marks = terms(question).split(" ").filter(Boolean).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const markRe = marks.length ? new RegExp(`\\b(${marks.join("|")})`, "gi") : null;
   const cites = r.citations || [];
   assignColours(cites);
   const answer = esc(r.answer)
@@ -458,9 +518,15 @@ function render(r) {
     `<div class="quote" id="${esc(c.id)}" style="border-left-color:${colour(c)}"><div class="meta"><span class="id">${esc(c.id)}</span>` +
     (c.speaker ? `<span class="who">${esc(c.speaker)}</span>` : "") +
     `<span>${esc(where(c))}</span>${c.date ? `<span>${esc(c.date)}</span>` : ""}</div>` +
-    `<div class="text">${esc(c.text)}</div></div>`).join("");
+    (c.day ? `<span class="stamp">Day ${esc(c.day)}${c.page ? " · p." + esc(c.page) : ""}</span>` : "") +
+    `<div class="text">${markRe ? esc(c.text).replace(markRe, "<mark>$1</mark>") : esc(c.text)}</div></div>`).join("");
 
-  let left = panel("Answer", `${cites.length} citations · ${esc(r.seconds)}s`, `<div class="answer">${answer}</div>`);
+  let stamp = "";
+  if (mode === "verify") {
+    const m = /\b(not supported|unsupported|contradicted|partially supported|partly supported|supported|insufficient evidence|unverified)\b/i.exec(r.answer || "");
+    if (m) { const v = m[1].toLowerCase(); stamp = `<div class="verdict ${/^(supported)$/.test(v) ? "ok" : /partial|partly|insufficient|unverified/.test(v) ? "mid" : "bad"}">${esc(m[1])}</div>`; }
+  }
+  let left = panel("Answer", `${cites.length} citations · ${esc(r.seconds)}s`, `${stamp}<div class="answer" id="answer">${answer}</div>`);
   if (r.news && r.news.length) left += extPanel("External press coverage · not commission evidence", r.news);
   if (r.judgments && r.judgments.length)
     left += extPanel("Possibly related court judgments (SAFLII) · verify identity", r.judgments);
@@ -510,7 +576,8 @@ $("form").addEventListener("submit", async (e) => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail));
-    render(data);
+    render(data, question);
+    typewrite();
     drawHits(question);
   } catch (err) {
     $("out").innerHTML = panel("Error", "", `<span class="err">${esc(err.message || err)}</span>`);
